@@ -70,17 +70,16 @@ static void DisassembleBuffer(ZydisDecoder* decoder, ZyanU8* data, ZyanUSize len
 
     ZyanU64 runtime_address = 0x007FFFFFFF400000;
 
-    ZydisDecodedInstruction instruction;
-    ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT_VISIBLE];
+    ZydisFullDecodedInstruction instruction;
     char buffer[256];
 
-    while (ZYAN_SUCCESS(ZydisDecoderDecodeFull(decoder, data, length, &instruction, operands,
-        ZYDIS_MAX_OPERAND_COUNT_VISIBLE, ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY)))
+    while (ZYAN_SUCCESS(ZydisDecoderDecodeFull(decoder, data, length, &instruction,
+        ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY)))
     {
         const ZydisFormatterToken* token;
-        if (ZYAN_SUCCESS(ZydisFormatterTokenizeInstruction(&formatter, &instruction, operands,
-            instruction.operand_count_visible , &buffer[0], sizeof(buffer), runtime_address,
-            &token)))
+        if (ZYAN_SUCCESS(ZydisFormatterTokenizeInstruction(&formatter, &instruction.info,
+            instruction.operands, instruction.operand_count , &buffer[0], sizeof(buffer),
+            runtime_address, &token)))
         {
             ZydisTokenType token_type;
             ZyanConstCharPointer token_value = ZYAN_NULL;
@@ -96,9 +95,9 @@ static void DisassembleBuffer(ZydisDecoder* decoder, ZyanU8* data, ZyanUSize len
             }
         }
 
-        data += instruction.length;
-        length -= instruction.length;
-        runtime_address += instruction.length;
+        data += instruction.info.length;
+        length -= instruction.info.length;
+        runtime_address += instruction.info.length;
     }
 }
 

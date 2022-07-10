@@ -262,8 +262,8 @@ ZYDIS_EXPORT ZyanStatus ZydisDecoderEnableMode(ZydisDecoder* decoder, ZydisDecod
  * @return  A zyan status code.
  */
 ZYDIS_EXPORT ZyanStatus ZydisDecoderDecodeFull(const ZydisDecoder* decoder,
-    const void* buffer, ZyanUSize length, ZydisDecodedInstruction* instruction,
-    ZydisDecodedOperand* operands, ZyanU8 operand_count, ZydisDecodingFlags flags);
+    const void* buffer, ZyanUSize length, ZydisFullDecodedInstruction *instruction,
+    ZydisDecodingFlags flags);
 
 /**
  * Decodes the instruction in the given input `buffer`.

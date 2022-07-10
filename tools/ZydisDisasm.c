@@ -124,15 +124,14 @@ int main(int argc, char** argv)
         }
         buffer_size += buffer_remaining;
 
-        ZydisDecodedInstruction instruction;
-        ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT_VISIBLE];
+        ZydisFullDecodedInstruction instruction;
         ZyanStatus status;
         ZyanUSize read_offset = 0;
         char format_buffer[256];
 
         while ((status = ZydisDecoderDecodeFull(&decoder, buffer + read_offset,
-            buffer_size - read_offset, &instruction, operands, ZYDIS_MAX_OPERAND_COUNT_VISIBLE,
-            ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY)) != ZYDIS_STATUS_NO_MORE_DATA)
+            buffer_size - read_offset, &instruction, ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY))
+            != ZYDIS_STATUS_NO_MORE_DATA)
         {
             const ZyanU64 runtime_address = read_offset_base + read_offset;
 
@@ -142,12 +141,12 @@ int main(int argc, char** argv)
                 continue;
             }
 
-            ZydisFormatterFormatInstruction(&formatter, &instruction, operands, 
-                instruction.operand_count_visible, format_buffer, sizeof(format_buffer),
+            ZydisFormatterFormatInstruction(&formatter, &instruction.info, instruction.operands,
+                instruction.operand_count, format_buffer, sizeof(format_buffer),
                 runtime_address);
             ZYAN_PUTS(format_buffer);
 
-            read_offset += instruction.length;
+            read_offset += instruction.info.length;
         }
 
         buffer_remaining = 0;

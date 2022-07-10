@@ -463,8 +463,8 @@ static void PrintSizeOptimizedForm(const ZydisDecoder* decoder,
         exit(status);
     }
 
-    ZydisDecodedInstruction new_instruction;
-    status = ZydisDecoderDecodeFull(decoder, &data, len, &new_instruction, ZYAN_NULL, 0, 0);
+    ZydisFullDecodedInstruction new_instruction;
+    status = ZydisDecoderDecodeFull(decoder, &data, len, &new_instruction, 0);
     if (!ZYAN_SUCCESS(status))
     {
         PrintStatusError(status, "Could not decode instruction");
@@ -472,7 +472,7 @@ static void PrintSizeOptimizedForm(const ZydisDecoder* decoder,
     }
 
 #if !defined(ZYDIS_DISABLE_SEGMENT)
-    PrintSegments(&new_instruction, &data[0], ZYAN_FALSE);
+    PrintSegments(&new_instruction.info, &data[0], ZYAN_FALSE);
 #endif
 }
 
@@ -1023,7 +1023,6 @@ static void PrintDisassembly(const ZydisDecodedInstruction* instruction,
  *
  * @param   decoder     A pointer to the `ZydisDecoder` instance.
  * @param   instruction A pointer to the `ZydisDecodedInstruction` struct.
- * @param   operands    A pointer to the first `ZydisDecodedOperand` struct of the instruction.
  */
 static void PrintInstruction(const ZydisDecoder* decoder,
     const ZydisDecodedInstruction* instruction, const ZydisDecodedOperand* operands)
@@ -1378,23 +1377,20 @@ int main(int argc, char** argv)
         }
     }
 
-    ZydisDecodedInstruction instruction;
-    ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
-
-    status = ZydisDecoderDecodeFull(&decoder, &data, byte_length, &instruction, operands,
-        ZYDIS_MAX_OPERAND_COUNT, 0);
+    ZydisFullDecodedInstruction instruction;
+    status = ZydisDecoderDecodeFull(&decoder, &data, byte_length, &instruction, 0);
     if (!ZYAN_SUCCESS(status))
     {
         PrintStatusError(status, "Could not decode instruction");
         return status;
     }
 
-    PrintInstruction(&decoder, &instruction, operands);
+    PrintInstruction(&decoder, &instruction.info, instruction.operands);
 
 #if !defined(ZYDIS_DISABLE_SEGMENT)
     ZYAN_PUTS("");
     PrintSectionHeader("SEGMENTS");
-    PrintSegments(&instruction, &data[0], ZYAN_TRUE);
+    PrintSegments(&instruction.info, &data[0], ZYAN_TRUE);
 #endif
 
     return EXIT_SUCCESS;

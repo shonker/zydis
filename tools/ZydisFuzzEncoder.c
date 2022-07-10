@@ -60,8 +60,7 @@ void ZydisCompareRequestToInstruction(const ZydisEncoderRequest *request,
     }
 
     // Handle possible KNC overlap
-    ZydisDecodedInstruction knc_insn;
-    ZydisDecodedOperand knc_operands[ZYDIS_MAX_OPERAND_COUNT_VISIBLE];
+    ZydisFullDecodedInstruction knc_insn;
     if (request->mnemonic != insn->mnemonic)
     {
         ZydisDecoder decoder;
@@ -77,13 +76,13 @@ void ZydisCompareRequestToInstruction(const ZydisEncoderRequest *request,
             abort();
         }
         if (!ZYAN_SUCCESS(ZydisDecoderDecodeFull(&decoder, insn_bytes, insn->length, &knc_insn,
-            knc_operands, ZYDIS_MAX_OPERAND_COUNT_VISIBLE, ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY)))
+            ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY)))
         {
             fputs("Failed to decode instruction\n", ZYAN_STDERR);
             abort();
         }
-        insn = &knc_insn;
-        operands = knc_operands;
+        insn = &knc_insn.info;
+        operands = knc_insn.operands;
     }
 
     ZyanBool prefixes_match = ((insn->attributes & request->prefixes) == request->prefixes);
@@ -287,18 +286,16 @@ int ZydisFuzzTarget(ZydisStreamRead read_fn, void *stream_ctx)
         abort();
     }
 
-    ZydisDecodedInstruction insn1;
-    ZydisDecodedOperand operands1[ZYDIS_MAX_OPERAND_COUNT];
-    status = ZydisDecoderDecodeFull(&decoder, encoded_instruction, encoded_length, &insn1, 
-        operands1, ZYDIS_MAX_OPERAND_COUNT, 0);
+    ZydisFullDecodedInstruction insn1;
+    status = ZydisDecoderDecodeFull(&decoder, encoded_instruction, encoded_length, &insn1, 0);
     if (!ZYAN_SUCCESS(status))
     {
         fputs("Failed to decode instruction\n", ZYAN_STDERR);
         abort();
     }
 
-    ZydisCompareRequestToInstruction(&request, &insn1, operands1, encoded_instruction);
-    ZydisReEncodeInstruction(&decoder, &insn1, operands1, insn1.operand_count, 
+    ZydisCompareRequestToInstruction(&request, &insn1.info, insn1.operands, encoded_instruction);
+    ZydisReEncodeInstruction(&decoder, &insn1.info, insn1.operands, insn1.operand_count,
         encoded_instruction);
 
     return EXIT_SUCCESS;

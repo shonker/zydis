@@ -4964,12 +4964,10 @@ ZyanStatus ZydisDecoderEnableMode(ZydisDecoder* decoder, ZydisDecoderMode mode, 
     return ZYAN_STATUS_SUCCESS;
 }
 
-ZyanStatus ZydisDecoderDecodeFull(const ZydisDecoder* decoder,
-    const void* buffer, ZyanUSize length, ZydisDecodedInstruction* instruction,
-    ZydisDecodedOperand* operands, ZyanU8 operand_count, ZydisDecodingFlags flags)
+ZyanStatus ZydisDecoderDecodeFull(const ZydisDecoder* decoder, const void* buffer, ZyanUSize length,
+    ZydisFullDecodedInstruction *instruction, ZydisDecodingFlags flags)
 {
-    if (!decoder || !instruction || (operand_count && !operands) ||
-        (operand_count > ZYDIS_MAX_OPERAND_COUNT))
+    if (!decoder || !instruction)
     {
         return ZYAN_STATUS_INVALID_ARGUMENT;
     }
@@ -4985,20 +4983,16 @@ ZyanStatus ZydisDecoderDecodeFull(const ZydisDecoder* decoder,
     }
 
     ZydisDecoderContext context;
-    ZYAN_CHECK(ZydisDecoderDecodeInstruction(decoder, &context, buffer, length, instruction));
+    ZYAN_CHECK(ZydisDecoderDecodeInstruction(
+        decoder, &context, buffer, length, &instruction->info));
 
     const ZyanBool visible_only = flags & ZYDIS_DFLAG_VISIBLE_OPERANDS_ONLY;
-    const ZyanU8 count = visible_only
-        ? instruction->operand_count_visible
-        : instruction->operand_count;
+    instruction->operand_count = visible_only
+        ? instruction->info.operand_count_visible
+        : instruction->info.operand_count;
 
-    operand_count = ZYAN_MIN(operand_count, count);
-    if (!operand_count)
-    {
-        return ZYAN_STATUS_SUCCESS;
-    }
-
-    return ZydisDecoderDecodeOperands(decoder, &context, instruction, operands, operand_count);
+    return ZydisDecoderDecodeOperands(
+        decoder, &context, &instruction->info, instruction->operands, instruction->operand_count);
 }
 
 ZyanStatus ZydisDecoderDecodeInstruction(const ZydisDecoder* decoder, ZydisDecoderContext* context,

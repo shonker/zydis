@@ -385,21 +385,19 @@ void ZydisReEncodeInstruction(const ZydisDecoder *decoder, const ZydisDecodedIns
         abort();
     }
 
-    ZydisDecodedInstruction insn2;
-    ZydisDecodedOperand operands2[ZYDIS_MAX_OPERAND_COUNT];
-    status = ZydisDecoderDecodeFull(decoder, encoded_instruction, encoded_length, &insn2, 
-        operands2, ZYDIS_MAX_OPERAND_COUNT, 0);
+    ZydisFullDecodedInstruction insn2;
+    status = ZydisDecoderDecodeFull(decoder, encoded_instruction, encoded_length, &insn2, 0);
     if (!ZYAN_SUCCESS(status))
     {
         fputs("Failed to decode re-encoded instruction\n", ZYAN_STDERR);
         abort();
     }
 
-    ZydisPrintInstruction(&insn2, operands2, insn2.operand_count_visible, encoded_instruction);
-    ZydisValidateEnumRanges(&insn2, operands2, insn2.operand_count_visible);
-    ZydisValidateInstructionIdentity(insn1, operands1, &insn2, operands2);
+    ZydisPrintInstruction(&insn2.info, insn2.operands, insn2.operand_count, encoded_instruction);
+    ZydisValidateEnumRanges(&insn2.info, insn2.operands, insn2.operand_count);
+    ZydisValidateInstructionIdentity(insn1, operands1, &insn2.info, insn2.operands);
 
-    if (insn2.length > insn1->length)
+    if (insn2.info.length > insn1->length)
     {
         fputs("Suboptimal output size detected\n", ZYAN_STDERR);
         abort();
